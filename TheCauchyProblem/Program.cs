@@ -7,82 +7,110 @@ namespace TheCauchyProblem
 	{
 		public static void Main (string[] args)
 		{
-			List<double> solution = Runge_Kutta (1, 2, 2, 1, 10);
-			foreach (double y in solution) {
-				Console.WriteLine (y);
+			Console.WriteLine("Which way do you want to choose step(choose number)?\n1. Automatic\n2. Const");
+			int step_way = Convert.ToInt32(Console.ReadLine ());
+			List<double[]> solution = Runge_Kutta (1, 2, 2, 1, 0.1, step_way);
+			foreach (double[] y in solution) {
+				Console.WriteLine ("x: {0}, y: {1}",y[0], y[1]);
 			}
 			Console.WriteLine ("Hello World!");
 		}
-		public static List<double> Runge_Kutta(double a, double b, double y_primary, int x_primary, double n, double first_step){
-			List<double> solution = new List<double> ();
-			double y = y_primary;
-			double x = x_primary;
+		public static List<double[]> Runge_Kutta(double a, double b, double y_primary, int x_primary, double first_step, int step_way){
 
-			double step = (b - a) / n;
+			/////////////////WITH AUTOMATIC STEP/////////////////////
+			List<double[]> auto_solution = new List<double[]>();
+			auto_solution.Add(new double[2] {x_primary,y_primary});
+			int steps_count = 0;
 
-			double fi_0 = step*f(x_primary, y_primary);
-			double fi_1 = step*f(x_primary+2 * step/3, y_primary + 2*fi_0/3);
+			double y_avt = y_primary;//крок 1
+			double x_avt = x_primary;//крок 1
 
-			for (int i = 0; i < n; i++) {
-				Console.WriteLine (y);
-				Console.WriteLine (x);
-				Console.WriteLine (fi_0);
-				Console.WriteLine (fi_1);
-				Console.WriteLine ("\n");
-				solution.Add (Math.Round(y,6));
-				y += (fi_0 + 3 * fi_1)/4;
-				x += step;
-				fi_0 = step*f(x, y);
-				fi_1 = step*f(x+2*step/3, y + 2*fi_0/3);
-			}
-			return solution;
+			double h = first_step;//крок 1
+			double eps = Math.Pow (10, -4);
 
-			/////////////////////////////////////////////////////////////
+			double y_h = y_primary;
+			double y_h2 = y_primary;
 
-			double y_avt = y_primary;
-			double x_avt = x_primary;
+			double epsh = 0;
+			double epsh2 = 0;
 
-			double h = first_step;
-			double eps = Math.Pow (10, -h);
+			double temp_h = 0;
+			double temp_h2 = 0;
 
-			double fi_0_h = h * f (x_avt, y_avt);
-			double fi_1_h = h * f (x_avt + 2 * h / 3, y_avt + 2 * fi_0 / 3);
+			for (int i = 0; b-x_avt>eps; i++) {
 
-			double fi_0_h2 = h * f (x_avt, y_avt) / 2;
-			double fi_1_h2 = h * f (x_avt + h / 3, y_avt + 2 * fi_0 / 3) / 2;
+				if (h > b - x_avt)
+					h = b - x_avt;
 
-			double y_h = (fi_0_h + 3 * fi_1_h) / 4;
-			double y_h2 = (fi_0_h2 + 3 * fi_1_h2) / 4;
+				temp_h = y_h + increment(x_avt, y_avt, h);//крок 2
+				temp_h2 = y_h2 + increment(x_avt, y_avt, h/2);//крок 2
 
-			double eps_h = 4 * (y_h2 - y_h) / 3;
-			double eps_h2 = (y_h2 - y_h) / 3;
+				epsh = eps_h (temp_h, temp_h2);
+				epsh2 = eps_h2 (temp_h, temp_h2);
 
-			if (Math.Abs (eps_h2) <= eps) {
-				x_avt += h;
+				if (Math.Abs (epsh2) <= eps) {//крок 3
+					y_h = temp_h;
+					y_h2 = temp_h2;
 
-				fi_0_h = h * f (x_avt, y_avt);
-				fi_1_h = h * f (x_avt + 2 * h / 3, y_avt + 2 * fi_0 / 3);
+					y_avt = y_h2 + eps_h2 (y_h, y_h2);//крок 3
 
-				fi_0_h2 = h * f (x_avt, y_avt) / 2;
-				fi_1_h2 = h * f (x_avt + h / 3, y_avt + 2 * fi_0 / 3) / 2;
+					x_avt += h;//крок 3
 
-				y_h = (fi_0_h + 3 * fi_1_h) / 4;
-				y_h2 = (fi_0_h2 + 3 * fi_1_h2) / 4;
+					auto_solution.Add (new double[2] {Math.Round(x_avt,6),Math.Round(y_avt,6)});
+					steps_count++;
 
-				eps_h2 = (y_h2 - y_h) / 3;
-
-				y_avt = y_h2 + eps_h2;
-				//далі на крок 4
-			} else {
-				h /= 2;
-				x_avt += h;
-				//далі на крок 2
+					if (Math.Abs (epsh) <= eps){//крок 4
+						h *= 2; 
+					}//далі крок 2
+					
+				} else h /= 2; //далі на крок 2
 			}
 
+			/////////////////WITH CONST STEP/////////////////////
+			if(step_way == 2){
 
+				List<double[]> const_solution = new List<double[]> ();
+				double y = y_primary;
+				double x = x_primary;
+
+				double step = (b - a) / (double)steps_count;
+
+				for (int i = 0; i < steps_count; i++) {;
+					const_solution.Add (new double[2] {x,Math.Round(y,6)});
+					y += increment (x, y, step);
+					x += step;
+				}
+				return const_solution;
+			}
+			return auto_solution;
+		}
+		public static double k_1(double x, double y, double h){
+			double ret = h * f (x, y);
+			return ret;
+		}
+		public static double k_2(double x, double y, double h){
+			double ret = h * f (x + h / 2, y + k_1 (x, y, h) / 2);
+			return ret;
+		}
+		public static double k_3(double x, double y, double h){
+			double ret = h * f (x + h / 2, y + k_2 (x, y, h) / 2);
+			return ret;
+		}
+		public static double k_4(double x, double y, double h){
+			double ret = h * f (x + h, y + k_3 (x, y, h));
+			return ret;
+		}
+		public static double eps_h2(double y1, double y2){
+			return (y2 - y1) / 15;
+		}
+		public static double eps_h(double y1, double y2){
+			return 16*(y2 - y1) / 15;
+		}
+		public static double increment(double x, double y, double h){
+			return (k_1 (x, y, h) + 2 * k_2 (x, y, h) + 2 * k_3 (x, y, h) + k_4 (x, y, h)) / 6;
 		}
 		public static double f(double x, double y){
-			double ret = (Math.Pow (x, 2) + Math.Pow (y, 2)) / (2 * x * y);
+			double ret = (Math.Pow (x, 2) - Math.Pow (y, 2)) / (2 * x * y);
 			return ret;
 		}
 
