@@ -20,7 +20,7 @@ namespace TheCauchyProblem
 			/////////////////WITH AUTOMATIC STEP/////////////////////
 			List<double[]> auto_solution = new List<double[]>();
 			auto_solution.Add(new double[2] {x_primary,y_primary});
-			int steps_count = 0;
+			int steps_count = 1;
 
 			double y_avt = y_primary;//крок 1
 			double x_avt = x_primary;//крок 1
@@ -43,7 +43,9 @@ namespace TheCauchyProblem
 					h = b - x_avt;
 
 				temp_h = y_h + increment(x_avt, y_avt, h);//крок 2
-				temp_h2 = y_h2 + increment(x_avt, y_avt, h/2);//крок 2
+				temp_h2 = y_h2 + increment(x_avt, y_avt, h/2.0);//крок 2
+
+				temp_h2 += increment (x_avt + h / 2, temp_h2, h / 2);
 
 				epsh = eps_h (temp_h, temp_h2);
 				epsh2 = eps_h2 (temp_h, temp_h2);
@@ -52,7 +54,9 @@ namespace TheCauchyProblem
 					y_h = temp_h;
 					y_h2 = temp_h2;
 
-					y_avt = y_h2 + eps_h2 (y_h, y_h2);//крок 3
+
+
+					y_avt = y_h2 + epsh2;//крок 3
 
 					x_avt += h;//крок 3
 
@@ -60,10 +64,10 @@ namespace TheCauchyProblem
 					steps_count++;
 
 					if (Math.Abs (epsh) <= eps){//крок 4
-						h *= 2; 
+						h *= 2.0; 
 					}//далі крок 2
 					
-				} else h /= 2; //далі на крок 2
+				} else h /= 2.0; //далі на крок 2
 			}
 
 			/////////////////WITH CONST STEP/////////////////////
@@ -89,11 +93,11 @@ namespace TheCauchyProblem
 			return ret;
 		}
 		public static double k_2(double x, double y, double h){
-			double ret = h * f (x + h / 2, y + k_1 (x, y, h) / 2);
+			double ret = h * f (x + h / 2.0, y + k_1 (x, y, h) / 2.0);
 			return ret;
 		}
 		public static double k_3(double x, double y, double h){
-			double ret = h * f (x + h / 2, y + k_2 (x, y, h) / 2);
+			double ret = h * f (x + h / 2.0, y + k_2 (x, y, h) / 2.0);
 			return ret;
 		}
 		public static double k_4(double x, double y, double h){
@@ -101,16 +105,16 @@ namespace TheCauchyProblem
 			return ret;
 		}
 		public static double eps_h2(double y1, double y2){
-			return (y2 - y1) / 15;
+			return (y2 - y1) / 15.0;
 		}
 		public static double eps_h(double y1, double y2){
-			return 16*(y2 - y1) / 15;
+			return 16.0*(y2 - y1) / 15.0;
 		}
 		public static double increment(double x, double y, double h){
-			return (k_1 (x, y, h) + 2 * k_2 (x, y, h) + 2 * k_3 (x, y, h) + k_4 (x, y, h)) / 6;
+			return (k_1 (x, y, h) + 2.0 * k_2 (x, y, h) + 2.0 * k_3 (x, y, h) + k_4 (x, y, h)) / 6.0;
 		}
 		public static double f(double x, double y){
-			double ret = (Math.Pow (x, 2) - Math.Pow (y, 2)) / (2 * x * y);
+			double ret = (Math.Pow (x, 2) - Math.Pow (y, 2)) / (2.0 * x * y);
 			return ret;
 		}
 
